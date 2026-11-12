@@ -179,8 +179,6 @@ def describe_region(region, saved=False):
     return f"{prefix}: {right - left} × {bottom - top} px at ({left}, {top})"
 
 
-SW_HIDE = 0
-SW_SHOW = 5
 GA_ROOT = 2
 WM_CLOSE = 0x0010
 SWP_NOSIZE = 0x0001
@@ -340,13 +338,6 @@ def send_to_recycle_bin(path):
         raise OSError(f"Windows could not move it to the Recycle Bin (code {result}).")
     if os.path.exists(target):
         raise OSError("The folder is still there — a file inside may be open in another app.")
-
-
-def set_hwnds_visible(hwnds, visible):
-    user32 = ctypes.windll.user32
-    cmd = SW_SHOW if visible else SW_HIDE
-    for hwnd in hwnds:
-        user32.ShowWindow(hwnd, cmd)
 
 
 def close_stray_scrollharvest_windows(keep_hwnd=None):
@@ -731,12 +722,6 @@ def align_frames(prev, curr, direction, allow_bridge=False):
     return shift, score, coarse
 
 
-def find_scroll_shift(prev, curr, direction):
-    """Return how many pixels of new content curr adds, or 0 if it looks like a duplicate."""
-    shift, _score, _coarse = align_frames(prev, curr, direction)
-    return shift
-
-
 def crop_score(img_a, img_b):
     if img_a.size != img_b.size or img_a.size[0] < 8 or img_a.size[1] < 4:
         return 1e9
@@ -745,124 +730,10 @@ def crop_score(img_a, img_b):
     return sum(stat.mean) / max(len(stat.mean), 1)
 
 
-def _row_diff(img_a, img_b, y_a, y_b, left, right):
-    row_a = img_a.crop((left, y_a, right, y_a + 1))
-    row_b = img_b.crop((left, y_b, right, y_b + 1))
-    stat = ImageStat.Stat(ImageChops.difference(row_a, row_b))
-    return sum(stat.mean) / max(len(stat.mean), 1)
-
-
-def sticky_bottom_px(prev, curr, max_px=16):
-    """Tiny glued-on UI at the bottom of the capture box, identical in both frames."""
-    if prev.size != curr.size:
-        return 0
-    width, height = prev.size
-    limit = min(max_px, max(4, height // 10))
-    left = int(width * 0.06)
-    right = int(width * 0.94)
-    if right - left < 16 or height < 40:
-        return 0
-    # 1px anti-alias / shadow under a status bar should not hide the bar.
-    start = 0
-    while start < 2 and start < limit:
-        y = height - 1 - start
-        if _row_diff(prev, curr, y, y, left, right) <= 2.0:
-            break
-        start += 1
-    matched = []
-    for i in range(start, limit):
-        y = height - 1 - i
-        if _row_diff(prev, curr, y, y, left, right) > 2.0:
-            break
-        matched.append(y)
-    if len(matched) < 2:
-        return 0
-    body_rows = []
-    best_body = None
-    for body_y in matched:
-        kept = [
-            y for y in matched
-            if _row_diff(prev, prev, y, body_y, left, right) <= 8.0
-        ]
-        if len(kept) > len(body_rows):
-            body_rows = kept
-            best_body = body_y
-    if best_body is None or len(body_rows) < 2:
-        return 0
-    y_lo = min(body_rows)
-    if y_lo - 1 in matched:
-        y_lo -= 1
-    total = height - y_lo
-    if total < 2 or total > limit:
-        return 0
-    # Dark art can make a single mid-row look identical; require two probes.
-    y_a = int(height * 0.35)
-    y_b = int(height * 0.65)
-    if (
-        _row_diff(prev, curr, y_a, y_a, left, right) < 2.0
-        and _row_diff(prev, curr, y_b, y_b, left, right) < 2.0
-    ):
-        return 0
-    # Page padding is the same color as the row above; a status bar is not.
-    above = height - 1 - total
-    if above >= 0 and _row_diff(prev, prev, height - total, above, left, right) < 3.0:
-        return 0
-    return total
-
-
 def _row_var(img, y, left, right):
     row = img.crop((left, y, right, y + 1)).convert("L")
     stat = ImageStat.Stat(row)
     return stat.var[0] if stat.var else 0.0
-
-
-def _row_mean(img, y, left, right):
-    row = img.crop((left, y, right, y + 1)).convert("L")
-    stat = ImageStat.Stat(row)
-    return stat.mean[0] if stat.mean else 0.0
-
-
-def trailing_chrome_rows(img, max_px=16):
-    """Gray window-chrome at the bottom of a piece sitting on darker art."""
-    width, height = img.size
-    left = int(width * 0.10)
-    right = int(width * 0.90)
-    if right - left < 16 or height < 40:
-        return 0
-    limit = min(max_px, max(4, height // 10))
-    body = 0
-    ref_y = height - 1
-    if _row_var(img, ref_y, left, right) > 80:
-        return 0
-    for i in range(limit):
-        y = height - 1 - i
-        if _row_var(img, y, left, right) > 80:
-            break
-        if _row_diff(img, img, y, ref_y, left, right) > 8.0:
-            break
-        body = i + 1
-        ref_y = y
-    if body < 4:
-        return 0
-    count = body
-    for i in range(body, min(body + 2, limit)):
-        y = height - 1 - i
-        if y < 0 or _row_var(img, y, left, right) > 80:
-            break
-        count = i + 1
-    edge_y = height - count
-    above = edge_y - 1
-    if above < 0:
-        return 0
-    body_mean = _row_mean(img, height - 1 - body // 2, left, right)
-    above_mean = _row_mean(img, above, left, right)
-    # Godot/editor chrome is mid-gray; the art under it is darker. Text pages
-    # and paragraph gaps are the same gray as the bar, so they stay put.
-    if not (40.0 <= body_mean <= 72.0):
-        return 0
-    if above_mean > body_mean - 8.0:
-        return 0
-    return count
 
 
 _LUT_GT8 = [1 if i > 8 else 0 for i in range(256)]
@@ -1153,7 +1024,9 @@ def find_quiet_band_center(
         h_cnt = h_act[hs0:hs0 + h_span].count(1)
         # Allow up to 6 horizontal transitions for vertical bubble walls / quote bars.
         glyph_h = max(0, h_cnt - 6)
-        cost = (v_cnt * 8.0) + (v_mean * 20.0) + (glyph_h * 12.0) + (fg_frac * 4.0)
+        # Flat-colored art has no edges, so occupancy must weigh enough on its own
+        # to keep breaks out of solid images and banners.
+        cost = (v_cnt * 8.0) + (v_mean * 20.0) + (glyph_h * 12.0) + (fg_frac * 40.0)
         if cross_raw is not None:
             c_mean = sum(cross_raw[s0:s1]) / span
             cost += c_mean * 40.0
@@ -1189,28 +1062,6 @@ def find_quiet_band_center(
             best_y = center_y
     out_y = max(low, min(high, best_y))
     return (out_y, best_raw) if return_score else out_y
-
-
-def quiet_seam_lift(img, footer):
-    """Compatibility wrapper returning lift into a contiguous quiet band."""
-    height = img.size[1]
-    high = height - footer
-    low = max(8, high - STITCH_SEAM_WINDOW)
-    if high - low < STITCH_SEAM_BAND + 2:
-        return 0
-    seam = find_quiet_band_center(img, low, high, prefer_y=high)
-    return max(0, min(high - seam, STITCH_SEAM_WINDOW))
-
-
-def quiet_row_near(img, target, window=40):
-    """Contiguous quiet-band center near target."""
-    height = img.size[1]
-    return find_quiet_band_center(
-        img,
-        max(1, target - window),
-        min(height - 2, target + window),
-        prefer_y=target,
-    )
 
 
 def _append_stitch_debug(folder, info, prev=None, curr=None, shift=0, direction="down"):
@@ -1661,20 +1512,6 @@ def _pad_pdf_page(crop, pad_top, pad_bot):
         )
     padded.paste(crop, (0, pad_top))
     return padded
-
-
-def find_quiet_split(img, target, window=180):
-    """Pick the center of a contiguous blank/low-content band near target for PDF page breaks."""
-    height = img.size[1]
-    low = max(1, target - window)
-    high = min(height - 1, target + window)
-    return find_quiet_band_center(
-        img,
-        low,
-        high,
-        prefer_y=target,
-        band_rows=STITCH_SEAM_BAND,
-    )
 
 
 def _slice_pdf_pages(rgb, max_page):
