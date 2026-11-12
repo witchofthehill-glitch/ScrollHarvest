@@ -31,7 +31,7 @@ Pillow `Image.MAX_IMAGE_PIXELS` is raised so long harvests can load.
 
 After a successful long PNG, `capture_####.png` frames are deleted. If stitch fails, frames stay.
 
-After code changes, fully close ScrollHarvest (the X, not just Stop). The running process does not reload `scrollharvest.py`.
+After code changes, fully close ScrollHarvest (the X, not just Stop). The running process does not reload `scrollharvest.py`. The Desktop and Start Menu shortcuts open the installed `%LOCALAPPDATA%\Programs\ScrollHarvest\ScrollHarvest.exe`, so code changes only reach them after running `build_exe.bat` (which rebuilds and refreshes that copy). For quick testing without a rebuild, run `pythonw scrollharvest.py` or `ScrollHarvest.bat`.
 
 ## Pausing, finishing, and deleting
 
@@ -49,9 +49,11 @@ After code changes, fully close ScrollHarvest (the X, not just Stop). The runnin
 
 ## Packaging
 
-Goal eventually: `ScrollHarvestSetup.exe` so the user does not need Python, Pillow, PyAutoGUI, Cursor, or a terminal. Today `build_exe.bat` produces a standalone `dist\ScrollHarvest.exe`; an installer is still to do.
+Goal eventually: `ScrollHarvestSetup.exe` so the user does not need Python, Pillow, PyAutoGUI, Cursor, or a terminal. Today `build_exe.bat` produces a standalone `dist\ScrollHarvest.exe` (~22 MB) and copies it to `%LOCALAPPDATA%\Programs\ScrollHarvest\`; a setup installer for other people is still to do.
 
-Freeze command (what `build_exe.bat` runs):
+Keep `--exclude-module cv2 --exclude-module numpy`: PyAutoGUI's optional image search pulls them in and they tripled the exe size (73 MB) for a feature ScrollHarvest never uses.
+
+Freeze command (core of what `build_exe.bat` runs):
 
 ```text
 pyinstaller --noconfirm --windowed --onefile
@@ -60,6 +62,8 @@ pyinstaller --noconfirm --windowed --onefile
   --add-data "scrollharvest_v2.ico;."
   --add-data "scrollharvest.ico;."
   --add-data "scrollharvest.png;."
+  --exclude-module cv2
+  --exclude-module numpy
   scrollharvest.py
 ```
 

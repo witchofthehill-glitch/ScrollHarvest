@@ -1,76 +1,72 @@
 
-# ScrollHarvest v1
+# ScrollHarvest
 
 **If you can scroll it, you can save it.**
 
-ScrollHarvest is a small local desktop utility for capturing content from software that does not provide a useful export option.
+ScrollHarvest is a small Windows app that saves anything you can scroll — a long chapter, a chat conversation, a Reddit thread, an illustrated book page — as one continuous PNG and a paged PDF. It's for apps and sites that don't offer a useful export.
 
-## What v1 does
+![ScrollHarvest main window](docs/screenshot.png)
 
-- Lets you draw a rectangle around the content you want to capture, and remembers that area next time.
-- Dark forest-green panel with cream text and gold accents; Start Harvest is the main action.
-- Takes numbered PNG screenshots of that region, then removes those frames once the long PNG is saved.
-- Automatically scrolls the selected area.
-- The control panel hides for each shot so it is not in the picture.
-- Stitches overlapping shots into one PNG and one PDF, named if you gave the harvest a name.
-- Lets you name a harvest so the folder, PNG, and PDF are easy to find later.
-- Shows a completion summary with Open PDF / Open PNG / Open Folder — files do not open by themselves.
-- Lists recent harvests on the main window.
-- Stores everything locally in a timestamped folder.
-- Does not upload your screenshots anywhere.
+## What it does
 
-## Requirements
+- You draw a box around the content once; ScrollHarvest remembers it for next time.
+- It takes a screenshot, scrolls a little, and repeats until the page stops changing.
+- It stitches the screenshots into one seamless image. Sticky headers, floating message bars, and fade-out edges are detected and left out, so you don't get repeated bars or sliced lines of text.
+- It also makes a PDF with clean page breaks that never cut through a line of text or an illustration, with page margins and a small "Page X of N" footer.
+- Everything stays on your computer. Nothing is uploaded.
 
-- Python 3.10+
-- Pillow
-- PyAutoGUI
+## Install
 
-Install dependencies:
+**Easiest:** run `ScrollHarvest.exe` (build it with `build_exe.bat`, see below). No Python needed. The build also installs it to `%LOCALAPPDATA%\Programs\ScrollHarvest\`.
+
+**From source:** install Python 3.10 or newer, then:
 
 ```bash
 pip install -r requirements.txt
-```
-
-Run:
-
-```bash
 python scrollharvest.py
 ```
 
-Or double-click **ScrollHarvest** on the Desktop. You can also run `ScrollHarvest.bat` in the project folder.
+You can also double-click `ScrollHarvest.bat`.
 
 ## How to use it
 
-1. Open ScrollHarvest.
-2. Click **Select Capture Area** and drag around the page you want to save. Press **Esc** to cancel. Next time, that box comes back — you can **Start Harvest** right away, or open Select Capture Area again (gold outline, **Enter** keeps it).
-3. Put the target conversation at the top of the capture area.
-4. Choose **down** (newer content) or **up** (older messages in many chat apps).
-5. Type a **Harvest name** if you want (for example `Neverbound_ch3`).
-6. Click **Start Harvest** (top row, next to Select Capture Area).
-7. You have 3 seconds to click the page you want saved so it can receive scroll.
-8. ScrollHarvest captures, scrolls, and repeats until frames stop changing. It also pauses at **Max shots** (default 400) so a noisy page cannot run forever — Continue for another batch, or Stop and keep what you have.
-9. Move the mouse to pause, then choose **Stop** or **Continue**.
-10. When it finishes, the app shows a completion summary. Use **Open PDF**, **Open PNG**, or **Open Folder** — nothing opens by itself.
+1. Click **Select Capture Area** and drag a box around the content. Press **Esc** to cancel. Next time the box comes back as a gold outline — press **Enter** to keep it, or drag its edges to adjust.
+2. Optionally type a **Harvest name** (for example `Neverbound_ch3`).
+3. Choose **down** for most pages, or **up** for chat apps that load older messages above.
+4. Click **Start Harvest**, then click the page you want saved within 3 seconds.
+5. Let it run. It stops by itself when the page stops changing.
 
-Recent harvests on the main window open PDF, PNG, or the folder without using **Stitch Folder**. You can still click **Stitch Folder** for an older harvest. Technical history and packaging notes are in `DEVELOPMENT_NOTES.md`.
+While it's running:
 
-Named captures are stored as `Desktop\ScrollHarvest\YourName_YYYYMMDD_HHMMSS\`. Unnamed ones still use `Harvest_YYYYMMDD_HHMMSS`.
+- **Move the mouse** or press **Esc** to pause. Then pick **Continue**, **Finish & Save** (stitch what you have), or **Discard** (throw this harvest away).
+- At **Max shots** (400 by default) it pauses so a page that never stops changing can't run forever.
 
-If harvest never stops (typing indicators, GIFs, clocks), raise **Stop when change ≤**, or wait for the **Max shots** pause and hit Stop.
+When it's done, use **Open PDF**, **Open PNG**, or **Open Folder**. Nothing opens by itself.
 
-Move the mouse into a screen corner to abort.
+### Recent harvests
 
-## Notes
+Each recent harvest has **PDF**, **PNG**, **Rebuild PDF** (remake the PDF from the saved image), **Folder**, and 🗑. The trash button moves the whole harvest to the Recycle Bin, so you can restore it if you change your mind.
 
-This is an early prototype. Some apps may:
-- scroll in unusual increments,
-- animate content,
-- lazy-load new content,
-- block screenshots,
-- or require accessibility/screen-recording permission.
+Harvests are saved in `Desktop\ScrollHarvest\YourName_YYYYMMDD_HHMMSS\`.
 
-Those cases may need per-platform improvements.
+## Tips
+
+- If lines look torn or doubled, lower **Scroll steps** (default 80).
+- If a harvest never stops (typing indicators, GIFs, clocks), raise **Stop when change ≤**, or press **Esc** and choose **Finish & Save**.
+- Keep the capture box tight around the content, but don't cut through letters at the edges.
+
+## Building the .exe
+
+Run `build_exe.bat`. It installs PyInstaller if needed, writes `dist\ScrollHarvest.exe` (a single ~22 MB file you can copy anywhere or share), and updates the installed copy. Close ScrollHarvest first so the installed copy can be replaced. Technical notes and the release testing checklist are in `DEVELOPMENT_NOTES.md`.
+
+## Limits
+
+Some apps scroll in unusual steps, animate or lazy-load content, or block screenshots. Those may need adjustments. ScrollHarvest is Windows-only.
 
 ## Privacy
 
-All captures stay on the computer unless the user manually moves or uploads them.
+All screenshots and files stay on your computer unless you move or upload them yourself.
+
+## License
+
+MIT — see `LICENSE.txt`. Crafted by Brass Silver.

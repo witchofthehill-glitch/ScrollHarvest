@@ -2516,7 +2516,6 @@ class ScrollHarvestApp:
             card = tk.Frame(self.recent_box, bg=shade, padx=10, pady=7)
             card.pack(fill="x", pady=(0, 3))
             card.columnconfigure(0, weight=1)
-            flags = ("PNG" if row["png"] else "—") + "  " + ("PDF" if row["pdf"] else "—")
             info = tk.Frame(card, bg=shade)
             info.grid(row=0, column=0, sticky="ew")
             tk.Label(
@@ -2526,15 +2525,15 @@ class ScrollHarvestApp:
                 bg=shade,
                 fg=t["fg"],
                 anchor="w",
-            ).pack(side="left")
+            ).pack(anchor="w")
             tk.Label(
                 info,
-                text=f"   {row['when']}    {flags}",
-                font=("Segoe UI", 9),
+                text=row["when"].replace("  ", " · "),
+                font=("Segoe UI", 8),
                 bg=shade,
                 fg=t["muted"],
                 anchor="w",
-            ).pack(side="left")
+            ).pack(anchor="w")
             actions = tk.Frame(card, bg=shade)
             actions.grid(row=0, column=1, sticky="e", padx=(10, 0))
             pdf_btn = tk.Button(
@@ -2566,6 +2565,19 @@ class ScrollHarvestApp:
                 state="disabled" if self.running else "normal",
             )
             self.paint_button(trash_btn, "trash").pack(side="left", padx=(10, 0))
+        self.grow_to_fit()
+
+    def grow_to_fit(self):
+        """Grow (never shrink) the window when new content would be clipped."""
+        if self.running or not hasattr(self, "_last_wrap"):
+            return
+        self.root.update_idletasks()
+        needed = self.frame.winfo_reqheight() + 52
+        current = self.root.winfo_height()
+        limit = max(int(self.root.winfo_screenheight() * 0.88), 560)
+        target = min(needed, limit)
+        if target > current:
+            self.root.geometry(f"{self.root.winfo_width()}x{target}")
 
     def trash_harvest(self, folder, name, when):
         if self.running:
