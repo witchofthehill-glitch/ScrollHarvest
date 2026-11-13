@@ -17,7 +17,7 @@ ScrollHarvest is a small Windows app that saves anything you can scroll — a lo
 
 ## Install
 
-**Easiest:** download `ScrollHarvest.exe` from the [Releases](../../releases/latest) page and double-click it. No Python or installer needed — it's a single file you can keep anywhere.
+**Easiest:** download `ScrollHarvest.exe` from the [Releases](https://github.com/witchofthehill-glitch/ScrollHarvest/releases/latest) page and double-click it. No Python or installer needed — it's a single file you can keep anywhere.
 
 **"Windows protected your PC"?** Windows shows this blue warning for any downloaded app that isn't code-signed, which costs money every year, so most free tools aren't. Click **More info**, then **Run anyway**. Some antivirus tools also flag apps packaged this way; the full source code is right here if you'd rather run it yourself.
 
