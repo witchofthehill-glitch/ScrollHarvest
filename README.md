@@ -17,7 +17,9 @@ ScrollHarvest is a small Windows app that saves anything you can scroll — a lo
 
 ## Install
 
-**Easiest:** run `ScrollHarvest.exe` (build it with `build_exe.bat`, see below). No Python needed. The build also installs it to `%LOCALAPPDATA%\Programs\ScrollHarvest\`.
+**Easiest:** download `ScrollHarvest.exe` from the [Releases](../../releases/latest) page and double-click it. No Python or installer needed — it's a single file you can keep anywhere.
+
+**"Windows protected your PC"?** Windows shows this blue warning for any downloaded app that isn't code-signed, which costs money every year, so most free tools aren't. Click **More info**, then **Run anyway**. Some antivirus tools also flag apps packaged this way; the full source code is right here if you'd rather run it yourself.
 
 **From source:** install Python 3.10 or newer, then:
 
@@ -57,7 +59,7 @@ Harvests are saved in `Desktop\ScrollHarvest\YourName_YYYYMMDD_HHMMSS\`.
 
 ## Building the .exe
 
-Run `build_exe.bat`. It installs PyInstaller if needed, writes `dist\ScrollHarvest.exe` (a single ~22 MB file you can copy anywhere or share), and updates the installed copy. Close ScrollHarvest first so the installed copy can be replaced. Technical notes and the release testing checklist are in `DEVELOPMENT_NOTES.md`.
+Run `build_exe.bat`. It installs PyInstaller if needed, writes `dist\ScrollHarvest.exe` (a single ~22 MB file), and installs it to `%LOCALAPPDATA%\Programs\ScrollHarvest\`. Close ScrollHarvest first so the installed copy can be replaced. Technical notes and the release testing checklist are in `DEVELOPMENT_NOTES.md`.
 
 ## Limits
 
@@ -66,6 +68,10 @@ Some apps scroll in unusual steps, animate or lazy-load content, or block screen
 ## Privacy
 
 All screenshots and files stay on your computer unless you move or upload them yourself.
+
+## Please use it fairly
+
+ScrollHarvest is meant for keeping a personal copy of things you can already read. Only save content you have the right to keep, respect each site's terms, and don't redistribute other people's writing or art without their permission.
 
 ## License
 
